@@ -8,6 +8,33 @@ defmodule Blackjack.DeckServer do
   end
 
   @doc """
+  Return the number of cards left in the deck
+
+  ## Examples
+    iex> {:ok, pid} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
+    iex> Blackjack.DeckServer.count(pid)
+    4
+    iex> Blackjack.DeckServer.draw_card(pid)
+    iex> Blackjack.DeckServer.count(pid)
+    3
+  """
+  def count(pid) do
+    GenServer.call(pid, :count)
+  end
+
+  @doc """
+  Deal n hands from the deck
+
+  ## Examples
+    iex> {:ok, pid} = Blackjack.DeckServer.start_link([:A, :K, :Q, :"9"])
+    iex> Blackjack.DeckServer.deal(pid, 2)
+    [[:A, :Q], [:K, :"9"]]
+  """
+  def deal(pid, n) do
+    GenServer.call(pid, {:deal, n})
+  end
+
+  @doc """
   Draw a card from the deck
 
   ## Examples
@@ -45,16 +72,11 @@ defmodule Blackjack.DeckServer do
     {:ok, deck}
   end
 
-  @doc """
-  Draw a card from the deck
+  def handle_call({:deal, n}, _from, deck) do
+    {dealt, remaining} = Enum.split(deck, n * 2)
+    {:reply, Enum.reverse(get_hands([], dealt, n)), remaining}
+ end
 
-  ## Examples
-
-    iex> Blackjack.DeckServer.handle_call(:draw_card, nil, [:A, :K, :Q, :K])
-    {:reply, :A, [:K, :Q, :K]}
-    iex> Blackjack.DeckServer.handle_call(:draw_card, nil, [])
-    {:reply, nil, []}
-  """
   def handle_call(:draw_card, _from, []) do
     {:reply, nil, []}
   end
@@ -63,7 +85,19 @@ defmodule Blackjack.DeckServer do
     {:reply, card, rest_of_deck}
   end
 
+  def handle_call(:count, _from, deck) do
+    {:reply, Enum.count(deck), deck}
+  end
+
   def handle_cast(:shuffle_deck, deck) do
     {:noreply, Enum.shuffle(deck)}
+  end
+
+  defp get_hands(hands, cards, num_players) do
+    if Enum.count(hands) < num_players do
+      get_hands([Enum.take_every(cards, num_players) | hands], Enum.drop(cards, 1), num_players)
+    else
+      hands
+    end
   end
 end
