@@ -3,8 +3,22 @@ defmodule Blackjack.PlayerServer do
 
   ## Client API
 
-  def start_link(deck_pid, strategy_module, hand) do
-    GenServer.start_link(__MODULE__, {deck_pid, strategy_module, hand}, name: __MODULE__)
+  def start_link(name, deck_pid, strategy_module, hand) do
+    GenServer.start_link(__MODULE__, {deck_pid, strategy_module, hand}, name: name)
+  end
+
+  @doc """
+  Show the player's hand
+
+  ## Examples
+
+      iex> {:ok, deck_pid} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
+      iex> {:ok, pid} = Blackjack.PlayerServer.start_link(:player, deck_pid, Blackjack.DealerStrategy, [:"9", :"3"])
+      iex> Blackjack.PlayerServer.show_hand(pid)
+      [:"9", :"3"]
+  """
+  def show_hand(pid) do
+    GenServer.call(pid, :show_hand)
   end
 
   @doc """
@@ -13,7 +27,7 @@ defmodule Blackjack.PlayerServer do
   ## Examples
 
       iex> {:ok, deck_pid} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
-      iex> {:ok, pid} = Blackjack.PlayerServer.start_link(deck_pid, Blackjack.DealerStrategy, [:"9", :"3"])
+      iex> {:ok, pid} = Blackjack.PlayerServer.start_link(:player, deck_pid, Blackjack.DealerStrategy, [:"9", :"3"])
       iex> Blackjack.PlayerServer.hit(pid)
       [:"9", :"3", :A]
       iex> Blackjack.PlayerServer.hit(pid)
@@ -29,7 +43,7 @@ defmodule Blackjack.PlayerServer do
   ## Examples
 
     iex> {:ok, deck_pid} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
-    iex> {:ok, pid} = Blackjack.PlayerServer.start_link(deck_pid, Blackjack.DealerStrategy, [:"9", :"3"])
+    iex> {:ok, pid} = Blackjack.PlayerServer.start_link(:player, deck_pid, Blackjack.DealerStrategy, [:"9", :"3"])
     iex> Blackjack.PlayerServer.play_house(pid)
     [:"9", :"3", :A,  :K]
   """
@@ -41,6 +55,10 @@ defmodule Blackjack.PlayerServer do
 
   def init(state) do
     {:ok, state}
+  end
+
+  def handle_call(:show_hand, _from, {deck_pid, strategy, hand}) do
+    {:reply, hand, {deck_pid, strategy, hand}}
   end
 
   def handle_call(:hit, _from, {deck_pid, strategy, hand}) do
