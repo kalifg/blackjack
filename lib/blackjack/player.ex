@@ -1,10 +1,13 @@
 defmodule Blackjack.Player do
+  alias Blackjack.Player
   use GenServer
+
+  defstruct [:deck, :strategy, hand: [], wins: 0, losses: 0]
 
   ## Client API
 
-  def start_link(name, deck_pid, strategy_module, hand) do
-    GenServer.start_link(__MODULE__, {deck_pid, strategy_module, hand}, name: name)
+  def start_link(name, player = %Player{}) do
+    GenServer.start_link(__MODULE__, player, name: name)
   end
 
   @doc """
@@ -12,8 +15,8 @@ defmodule Blackjack.Player do
 
   ## Examples
 
-      iex> {:ok, deck_pid} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
-      iex> {:ok, pid} = Blackjack.Player.start_link(:player, deck_pid, Blackjack.DealerStrategy, [:"9", :"3"])
+      iex> {:ok, deck} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
+      iex> {:ok, pid} = Blackjack.Player.start_link(:player, %Player{deck: deck, strategy: Blackjack.DealerStrategy, hand: [:"9", :"3"]})
       iex> Blackjack.Player.show_hand(pid)
       [:"9", :"3"]
   """
@@ -26,8 +29,8 @@ defmodule Blackjack.Player do
 
   ## Examples
 
-      iex> {:ok, deck_pid} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
-      iex> {:ok, pid} = Blackjack.Player.start_link(:player, deck_pid, Blackjack.DealerStrategy, [:"9", :"3"])
+      iex> {:ok, deck} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
+      iex> {:ok, pid} = Blackjack.Player.start_link(:player, %Player{deck: deck, strategy: Blackjack.DealerStrategy, hand: [:"9", :"3"]})
       iex> Blackjack.Player.hit(pid)
       [:"9", :"3", :A]
       iex> Blackjack.Player.hit(pid)
@@ -42,8 +45,8 @@ defmodule Blackjack.Player do
 
   ## Examples
 
-    iex> {:ok, deck_pid} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
-    iex> {:ok, pid} = Blackjack.Player.start_link(:player, deck_pid, Blackjack.DealerStrategy, [:"9", :"3"])
+    iex> {:ok, deck} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
+    iex> {:ok, pid} = Blackjack.Player.start_link(:player, %Player{deck: deck, strategy: Blackjack.DealerStrategy, hand: [:"9", :"3"]})
     iex> Blackjack.Player.play_hand(pid)
     [:"9", :"3", :A,  :K]
   """
@@ -57,22 +60,22 @@ defmodule Blackjack.Player do
     {:ok, state}
   end
 
-  def handle_call(:show_hand, _from, {deck_pid, strategy, hand}) do
-    {:reply, hand, {deck_pid, strategy, hand}}
+  def handle_call(:show_hand, _from, player = %Player{hand: hand}) do
+    {:reply, hand, player}
   end
 
-  def handle_call(:hit, _from, {deck_pid, strategy, hand}) do
-    card = Blackjack.DeckServer.draw_card(deck_pid)
+  def handle_call(:hit, _from, player = %Player{deck: deck, hand: hand}) do
+    card = Blackjack.DeckServer.draw_card(deck)
     hand = hand ++ [card]
-    {:reply, hand, {deck_pid, strategy, hand}}
+    {:reply, hand, %{player | hand: hand}}
   end
 
-  def handle_call(:play_hand, from, {deck_pid, strategy, hand}) do
+  def handle_call(:play_hand, from, player = %Player{deck: deck, strategy: strategy, hand: hand}) do
     if strategy.should_hit?(hand) do
-      card = Blackjack.DeckServer.draw_card(deck_pid)
-      handle_call(:play_hand, from, {deck_pid, strategy, hand ++ [card]})
+      card = Blackjack.DeckServer.draw_card(deck)
+      handle_call(:play_hand, from, %{player | hand: hand ++ [card]})
     else
-      {:reply, hand, {deck_pid, strategy, hand}}
+      {:reply, hand, player}
     end
   end
 end
