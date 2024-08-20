@@ -1,4 +1,4 @@
-defmodule Blackjack.DeckServer do
+defmodule Blackjack.Deck do
   use GenServer
 
   # Client API
@@ -11,11 +11,11 @@ defmodule Blackjack.DeckServer do
   Return the number of cards left in the deck
 
   ## Examples
-    iex> {:ok, pid} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
-    iex> Blackjack.DeckServer.count(pid)
+    iex> {:ok, pid} = Blackjack.Deck.start_link([:A, :K, :Q, :K])
+    iex> Blackjack.Deck.count(pid)
     4
-    iex> Blackjack.DeckServer.draw_card(pid)
-    iex> Blackjack.DeckServer.count(pid)
+    iex> Blackjack.Deck.draw_card(pid)
+    iex> Blackjack.Deck.count(pid)
     3
   """
   def count(pid) do
@@ -26,8 +26,8 @@ defmodule Blackjack.DeckServer do
   Deal n hands from the deck
 
   ## Examples
-    iex> {:ok, pid} = Blackjack.DeckServer.start_link([:A, :K, :Q, :"9"])
-    iex> Blackjack.DeckServer.deal(pid, 2)
+    iex> {:ok, pid} = Blackjack.Deck.start_link([:A, :K, :Q, :"9"])
+    iex> Blackjack.Deck.deal(pid, 2)
     [[:A, :Q], [:K, :"9"]]
   """
   def deal(pid, n) do
@@ -38,16 +38,16 @@ defmodule Blackjack.DeckServer do
   Draw a card from the deck
 
   ## Examples
-    iex> {:ok, pid} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
-    iex> Blackjack.DeckServer.draw_card(pid)
+    iex> {:ok, pid} = Blackjack.Deck.start_link([:A, :K, :Q, :K])
+    iex> Blackjack.Deck.draw_card(pid)
     :A
-    iex> Blackjack.DeckServer.draw_card(pid)
+    iex> Blackjack.Deck.draw_card(pid)
     :K
-    iex> Blackjack.DeckServer.draw_card(pid)
+    iex> Blackjack.Deck.draw_card(pid)
     :Q
-    iex> Blackjack.DeckServer.draw_card(pid)
+    iex> Blackjack.Deck.draw_card(pid)
     :K
-    iex> Blackjack.DeckServer.draw_card(pid)
+    iex> Blackjack.Deck.draw_card(pid)
     nil
   """
   def draw_card(pid) do
@@ -65,7 +65,7 @@ defmodule Blackjack.DeckServer do
 
   ## Examples
 
-    iex> Blackjack.DeckServer.init([:A, :K, :Q, :K])
+    iex> Blackjack.Deck.init([:A, :K, :Q, :K])
     {:ok, [:A, :K, :Q, :K]}
   """
   def init(deck) do

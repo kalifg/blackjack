@@ -15,7 +15,7 @@ defmodule Blackjack.Player do
 
   ## Examples
 
-      iex> {:ok, deck} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
+      iex> {:ok, deck} = Blackjack.Deck.start_link([:A, :K, :Q, :K])
       iex> {:ok, pid} = Blackjack.Player.start_link(:player, %Player{deck: deck, strategy: Blackjack.DealerStrategy, hand: [:"9", :"3"]})
       iex> Blackjack.Player.show_hand(pid)
       [:"9", :"3"]
@@ -29,7 +29,7 @@ defmodule Blackjack.Player do
 
   ## Examples
 
-      iex> {:ok, deck} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
+      iex> {:ok, deck} = Blackjack.Deck.start_link([:A, :K, :Q, :K])
       iex> {:ok, pid} = Blackjack.Player.start_link(:player, %Player{deck: deck, strategy: Blackjack.DealerStrategy, hand: [:"9", :"3"]})
       iex> Blackjack.Player.hit(pid)
       [:"9", :"3", :A]
@@ -45,7 +45,7 @@ defmodule Blackjack.Player do
 
   ## Examples
 
-    iex> {:ok, deck} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
+    iex> {:ok, deck} = Blackjack.Deck.start_link([:A, :K, :Q, :K])
     iex> {:ok, pid} = Blackjack.Player.start_link(:player, %Player{deck: deck, strategy: Blackjack.DealerStrategy, hand: [:"9", :"3"]})
     iex> Blackjack.Player.play_hand(pid)
     [:"9", :"3", :A,  :K]
@@ -65,14 +65,14 @@ defmodule Blackjack.Player do
   end
 
   def handle_call(:hit, _from, player = %Player{deck: deck, hand: hand}) do
-    card = Blackjack.DeckServer.draw_card(deck)
+    card = Blackjack.Deck.draw_card(deck)
     hand = hand ++ [card]
     {:reply, hand, %{player | hand: hand}}
   end
 
   def handle_call(:play_hand, from, player = %Player{deck: deck, strategy: strategy, hand: hand}) do
     if strategy.should_hit?(hand) do
-      card = Blackjack.DeckServer.draw_card(deck)
+      card = Blackjack.Deck.draw_card(deck)
       handle_call(:play_hand, from, %{player | hand: hand ++ [card]})
     else
       {:reply, hand, player}
