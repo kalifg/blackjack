@@ -1,4 +1,4 @@
-defmodule Blackjack.PlayerServer do
+defmodule Blackjack.Player do
   use GenServer
 
   ## Client API
@@ -13,8 +13,8 @@ defmodule Blackjack.PlayerServer do
   ## Examples
 
       iex> {:ok, deck_pid} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
-      iex> {:ok, pid} = Blackjack.PlayerServer.start_link(:player, deck_pid, Blackjack.DealerStrategy, [:"9", :"3"])
-      iex> Blackjack.PlayerServer.show_hand(pid)
+      iex> {:ok, pid} = Blackjack.Player.start_link(:player, deck_pid, Blackjack.DealerStrategy, [:"9", :"3"])
+      iex> Blackjack.Player.show_hand(pid)
       [:"9", :"3"]
   """
   def show_hand(pid) do
@@ -27,10 +27,10 @@ defmodule Blackjack.PlayerServer do
   ## Examples
 
       iex> {:ok, deck_pid} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
-      iex> {:ok, pid} = Blackjack.PlayerServer.start_link(:player, deck_pid, Blackjack.DealerStrategy, [:"9", :"3"])
-      iex> Blackjack.PlayerServer.hit(pid)
+      iex> {:ok, pid} = Blackjack.Player.start_link(:player, deck_pid, Blackjack.DealerStrategy, [:"9", :"3"])
+      iex> Blackjack.Player.hit(pid)
       [:"9", :"3", :A]
-      iex> Blackjack.PlayerServer.hit(pid)
+      iex> Blackjack.Player.hit(pid)
       [:"9", :"3", :A, :K]
   """
   def hit(pid) do
@@ -43,12 +43,12 @@ defmodule Blackjack.PlayerServer do
   ## Examples
 
     iex> {:ok, deck_pid} = Blackjack.DeckServer.start_link([:A, :K, :Q, :K])
-    iex> {:ok, pid} = Blackjack.PlayerServer.start_link(:player, deck_pid, Blackjack.DealerStrategy, [:"9", :"3"])
-    iex> Blackjack.PlayerServer.play_house(pid)
+    iex> {:ok, pid} = Blackjack.Player.start_link(:player, deck_pid, Blackjack.DealerStrategy, [:"9", :"3"])
+    iex> Blackjack.Player.play_hand(pid)
     [:"9", :"3", :A,  :K]
   """
-  def play_house(pid) do
-    GenServer.call(pid, :play_house)
+  def play_hand(pid) do
+    GenServer.call(pid, :play_hand)
   end
 
   # Server Callbacks
@@ -67,10 +67,10 @@ defmodule Blackjack.PlayerServer do
     {:reply, hand, {deck_pid, strategy, hand}}
   end
 
-  def handle_call(:play_house, from, {deck_pid, strategy, hand}) do
+  def handle_call(:play_hand, from, {deck_pid, strategy, hand}) do
     if strategy.should_hit?(hand) do
       card = Blackjack.DeckServer.draw_card(deck_pid)
-      handle_call(:play_house, from, {deck_pid, strategy, hand ++ [card]})
+      handle_call(:play_hand, from, {deck_pid, strategy, hand ++ [card]})
     else
       {:reply, hand, {deck_pid, strategy, hand}}
     end
