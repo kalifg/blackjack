@@ -2,7 +2,7 @@ defmodule Blackjack.Player do
   alias Blackjack.Player
   use GenServer
 
-  defstruct [:deck, :strategy, hand: [], wins: 0, losses: 0]
+  defstruct [:deck, :strategy, hand: [], wins: 0, losses: 0, split: nil]
 
   ## Client API
 
@@ -50,8 +50,8 @@ defmodule Blackjack.Player do
     iex> Blackjack.Player.play_hand(pid)
     [:"9", :"3", :A,  :K]
   """
-  def play_hand(pid) do
-    GenServer.call(pid, :play_hand)
+  def play_hand(pid, dealer_card \\ nil) do
+    GenServer.call(pid, {:play_hand, dealer_card})
   end
 
   # Server Callbacks
@@ -70,12 +70,13 @@ defmodule Blackjack.Player do
     {:reply, hand, %{player | hand: hand}}
   end
 
-  def handle_call(:play_hand, from, player = %Player{deck: deck, strategy: strategy, hand: hand}) do
-    if strategy.should_hit?(hand) do
-      card = Blackjack.Deck.draw_card(deck)
-      handle_call(:play_hand, from, %{player | hand: hand ++ [card]})
-    else
-      {:reply, hand, player}
+  def handle_call({:play_hand, dealer_card}, from, player = %Player{deck: deck, strategy: strategy, hand: hand}) do
+    case strategy.action(hand, dealer_card) do
+      :hit ->
+        card = Blackjack.Deck.draw_card(deck)
+        handle_call({:play_hand, dealer_card}, from, %{player | hand: hand ++ [card]})
+
+      :stand -> {:reply, hand, player}
     end
   end
 end

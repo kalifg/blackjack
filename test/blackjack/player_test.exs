@@ -12,6 +12,6 @@ defmodule Blackjack.PlayerTest do
   test "Default plays a hand" do
     {:ok, deck} = Blackjack.Deck.start_link([:A, :K, :Q, :K])
     {:ok, pid} = Blackjack.Player.start_link(:player, %Player{deck: deck, strategy: Blackjack.DefaultStrategy, hand: [:"9", :"5"]})
-    [:"9", :"5", :A] = Blackjack.Player.play_hand(pid)
+    [:"9", :"5", :A] = Blackjack.Player.play_hand(pid, :A)
   end
 end
