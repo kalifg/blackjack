@@ -1,4 +1,6 @@
 defmodule Blackjack do
+  # alias Blackjack.Player
+
   @moduledoc """
   Documentation for `Blackjack`.
   """
@@ -6,9 +8,26 @@ defmodule Blackjack do
   # Any hand greater than this value is a bust
   @bust_limit 21
 
-  def main(args) do
-    IO.inspect(args)
-  end
+  # def main(_args) do
+  #   {:ok, deck} = Blackjack.Deck.start_link(Blackjack.deck)
+
+  #   hands = Blackjack.Deck.deal(deck, 3)
+
+  #   {player_hands, [dealer_hand]} = hands |> Enum.split(-1)
+
+  #   _player_pids = player_hands
+  #     |> Enum.zip(1..Enum.count(player_hands))
+  #     |> Enum.map(fn {hand, num} ->
+  #       Blackjack.Player.start_link(
+  #         ("player_" <> Integer.to_string(num)) |> String.to_atom,
+  #         %Player{deck: deck, strategy: Blackjack.DefaultStrategy, hand: hand}
+  #       )
+  #     end)
+  #     |> Enum.map(fn {:ok, pid} -> pid end)
+
+  #   _dealer_pid = Blackjack.Player.start_link(:dealer, %Player{deck: deck, strategy: Blackjack.DealerStrategy, hand: dealer_hand})
+
+  # end
 
   @doc """
   Get the point values for a card

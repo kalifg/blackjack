@@ -1,103 +1,85 @@
 defmodule Blackjack.Deck do
-  use GenServer
+  defstruct cards: []
 
-  # Client API
-
-  def start_link(initial_deck) do
-    GenServer.start_link(__MODULE__, initial_deck, name: __MODULE__)
-  end
+  alias Blackjack.Deck
+  alias Blackjack.Player
 
   @doc """
   Return the number of cards left in the deck
 
   ## Examples
-    iex> {:ok, pid} = Blackjack.Deck.start_link([:A, :K, :Q, :K])
-    iex> Blackjack.Deck.count(pid)
+    iex> deck = %Deck{cards: [:A, :K, :Q, :K]}
+    iex> Deck.count(deck)
     4
-    iex> Blackjack.Deck.draw_card(pid)
-    iex> Blackjack.Deck.count(pid)
+    iex> Deck.count(Deck.deal(%Player{}, deck) |> elem(1))
     3
   """
-  def count(pid) do
-    GenServer.call(pid, :count)
+  def count(%Deck{cards: cards}) do
+    Enum.count(cards)
   end
 
-  @doc """
-  Deal n hands from the deck
+  # @doc """
+  # Deal n hands from the deck
 
-  ## Examples
-    iex> {:ok, pid} = Blackjack.Deck.start_link([:A, :K, :Q, :"9"])
-    iex> Blackjack.Deck.deal(pid, 2)
-    [[:A, :Q], [:K, :"9"]]
-  """
-  def deal(pid, n) do
-    GenServer.call(pid, {:deal, n})
-  end
+  # ## Examples
+  #   iex> deck = %Deck{cards: [:A, :K, :Q, :"9"]}
+  #   iex> Deck.deal(deck, 2)
+  #   {[[:A, :Q], [:K, :"9"]], %Deck{cards: []}}
+  # """
+  # def deal(%Deck{cards: cards}, n) when is_integer(n) do
+  #   {dealt, remaining} = Enum.split(cards, n * 2)
+  #   {Enum.reverse(get_hands([], dealt, n)), %Deck{cards: remaining}}
+  # end
 
-  @doc """
-  Draw a card from the deck
-
-  ## Examples
-    iex> {:ok, pid} = Blackjack.Deck.start_link([:A, :K, :Q, :K])
-    iex> Blackjack.Deck.draw_card(pid)
-    :A
-    iex> Blackjack.Deck.draw_card(pid)
-    :K
-    iex> Blackjack.Deck.draw_card(pid)
-    :Q
-    iex> Blackjack.Deck.draw_card(pid)
-    :K
-    iex> Blackjack.Deck.draw_card(pid)
-    nil
-  """
-  def draw_card(pid) do
-     GenServer.call(pid, :draw_card)
-  end
-
-  def shuffle_deck(pid) do
-    GenServer.cast(pid, :shuffle_deck)
-  end
-
-  # Server API
-
-  @doc """
-  Initialize the deck
+    @doc """
+  Deal a card to a player
 
   ## Examples
 
-    iex> Blackjack.Deck.init([:A, :K, :Q, :K])
-    {:ok, [:A, :K, :Q, :K]}
+    iex> deck = %Deck{cards: [:"9", :A, :K, :Q, :K]}
+    iex> player = %Player{}
+    iex> {player, deck} = Deck.deal(player, deck)
+    {%Player{hand: [:"9"]}, %Deck{cards: [:A, :K, :Q, :K]}}
+    iex> Deck.deal(player, deck)
+    {%Player{hand: [:"9", :A]}, %Deck{cards: [:K, :Q, :K]}}
   """
-  def init(deck) do
-    {:ok, deck}
+  def deal(player = %Player{hand: hand}, %Deck{cards: cards}) do
+    {%Player{player | hand: hand ++ [cards |> hd]}, %Deck{cards: cards |> tl}}
   end
 
-  def handle_call({:deal, n}, _from, deck) do
-    {dealt, remaining} = Enum.split(deck, n * 2)
-    {:reply, Enum.reverse(get_hands([], dealt, n)), remaining}
- end
+  # @doc """
+  # Draw a card from the deck
 
-  def handle_call(:draw_card, _from, []) do
-    {:reply, nil, []}
+  # ## Examples
+  #   iex> deck = %Deck{cards: [:A, :K, :Q, :K]}
+  #   iex> {_card, deck} = Deck.draw_card(deck)
+  #   {:A, %Deck{cards: [:K, :Q, :K]}}
+  #   iex> {_card, deck} = Deck.draw_card(deck)
+  #   {:K, %Deck{cards: [:Q, :K]}}
+  #   iex> {_card, deck} = Deck.draw_card(deck)
+  #   {:Q, %Deck{cards: [:K]}}
+  #   iex> {_card, deck} = Deck.draw_card(deck)
+  #   {:K, %Deck{cards: []}}
+  #   iex> Deck.draw_card(deck)
+  #   {nil, %Deck{cards: []}}
+  # """
+  # def draw_card(%Deck{cards: []}) do
+  #   {nil, %Deck{cards: []}}
+  # end
+
+  # def draw_card(%Deck{cards: [card | rest_of_deck]}) do
+  #   {card, %Deck{cards: rest_of_deck}}
+  # end
+
+  def shuffle_deck(%Deck{cards: cards}) do
+    %Deck{cards: Enum.shuffle(cards)}
   end
 
-  def handle_call(:draw_card, _from, [card | rest_of_deck]) do
-    {:reply, card, rest_of_deck}
-  end
-
-  def handle_call(:count, _from, deck) do
-    {:reply, Enum.count(deck), deck}
-  end
-
-  def handle_cast(:shuffle_deck, deck) do
-    {:noreply, Enum.shuffle(deck)}
-  end
-
-  defp get_hands(hands, cards, num_players) do
-    if Enum.count(hands) < num_players do
-      get_hands([Enum.take_every(cards, num_players) | hands], Enum.drop(cards, 1), num_players)
-    else
-      hands
-    end
-  end
+  # defp get_hands(hands, cards, num_players) do
+  #   if Enum.count(hands) < num_players do
+  #     get_hands([Enum.take_every(cards, num_players) | hands], Enum.drop(cards, 1), num_players)
+  #   else
+  #     hands
+  #   end
+  # end
 end
