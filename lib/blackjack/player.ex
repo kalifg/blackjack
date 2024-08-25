@@ -1,95 +1,100 @@
 defmodule Blackjack.Player do
-  # alias Blackjack.Dealer
-  # alias Blackjack.Deck
+  alias Blackjack.Deck
   alias Blackjack.DefaultStrategy
   alias Blackjack.Player
 
-  use GenServer
+  defstruct strategy: DefaultStrategy,
+            current_hand: [],
+            split_hands: [],
+            finished_hands: [],
+            wins: 0,
+            losses: 0
 
-  defstruct [strategy: DefaultStrategy, hand: [], wins: 0, losses: 0]
+  @doc """
+  Play the current hand
 
-  ## Client API
+  ## Examples
 
-  # def start_link(name, player = %Player{}) do
-  #   GenServer.start_link(__MODULE__, player, name: name)
-  # end
+    iex> deck = %Deck{cards: [:A, :K, :Q, :K]}
+    iex> dealer = %Player{current_hand: [:A, :"3"], strategy: Blackjack.DealerStrategy}
+    iex> player = %Player{current_hand: [:"9", :"3"]}
+    iex> Player.play_hand(player, dealer, deck)
+    {%Player{current_hand: nil, finished_hands: [[:"9", :"3", :A, :K]]}, %Deck{cards: [:Q, :K]}}
 
-  # @doc """
-  # Show the player's hand
+    iex> deck = %Deck{cards: [:A, :K, :Q, :K]}
+    iex> dealer = %Player{current_hand: [:A, :"3"], strategy: Blackjack.DealerStrategy}
+    iex> player = %Player{current_hand: [:"9", :A]}
+    iex> Player.play_hand(player, dealer, deck)
+    {%Player{current_hand: nil, finished_hands: [[:"9", :A]]}, %Deck{cards: [:A, :K, :Q, :K]}}
 
-  # ## Examples
+    iex> deck = %Deck{cards: [:"7", :Q, :K, :"8"]}
+    iex> dealer = %Player{current_hand: [:A, :"3"], strategy: Blackjack.DealerStrategy}
+    iex> player = %Player{current_hand: [:A, :A]}
+    iex> Player.play_hand(player, dealer, deck)
+    {%Player{current_hand: nil, finished_hands: [[:A, :"7"], [:A, :Q]]}, %Deck{cards: [:K, :"8"]}}
 
-  #     iex> {:ok, pid} = Player.start_link(:player, %Player{hand: [:"9", :"3"]})
-  #     iex> Player.show_hand(pid)
-  #     [:"9", :"3"]
-  # """
-  # def show_hand(pid) do
-  #   GenServer.call(pid, :show_hand)
-  # end
+    iex> deck = %Deck{cards: [:A, :Q, :K, :"8"]}
+    iex> dealer = %Player{current_hand: [:A, :"3"], strategy: Blackjack.DealerStrategy}
+    iex> player = %Player{current_hand: [:A, :A]}
+    iex> Player.play_hand(player, dealer, deck)
+    {%Player{current_hand: nil, finished_hands: [[:A, :Q], [:A, :K], [:A, :"8"]]}, %Deck{cards: []}}
 
-  # @doc """
-  # Take a card from the deck
+    iex> deck = %Deck{cards: [:A, :Q, :K, :"8"]}
+    iex> dealer = %Player{current_hand: [:A, :"3"], strategy: Blackjack.DealerStrategy}
+    iex> player = %Player{current_hand: [:"9", :"2"]}
+    iex> Player.play_hand(player, dealer, deck)
+    {%Player{current_hand: nil, finished_hands: [[:"9", :"2", :A]]}, %Deck{cards: [:Q, :K, :"8"]}}
+  """
+  def play_hand(
+        player = %Player{
+          current_hand: current_hand,
+          strategy: strategy,
+          split_hands: split_hands,
+          finished_hands: finished_hands
+        },
+        dealer = %Player{current_hand: [dealer_card | _other_cards]},
+        deck
+      ) do
+    case strategy.action(current_hand, dealer_card) do
+      :hit ->
+        {player, deck} = Deck.deal(player, deck)
+        play_hand(player, dealer, deck)
 
-  # ## Examples
+      :stand ->
+        case splits(split_hands) do
+          {next_hand, splits} ->
+          play_hand(
+            %Player{
+              player
+              | current_hand: next_hand,
+                split_hands: splits,
+                finished_hands: finished_hands ++ [current_hand]
+            },
+            dealer,
+            deck
+          )
+          _ -> {%Player{player | current_hand: nil, finished_hands: finished_hands ++ [current_hand]}, deck}
+        end
 
-  #     iex> deck = %Deck{cards: [:A, :K, :Q, :K]}
-  #     iex> {:ok, dealer} = Dealer.start_link(%Dealer{deck: deck})
-  #     iex> {:ok, player} = Player.start_link(:player, %Player{hand: [:"9", :"3"]})
-  #     iex> Player.hit(dealer)
-  #     [:"9", :"3", :A]
-  #     iex> Player.hit(dealer)
-  #     [:"9", :"3", :A, :K]
-  # """
-  # def hit(pid) do
-  #   GenServer.call(pid, :hit)
-  # end
+      :split ->
+        [card1, card2] = current_hand
+        play_hand(
+          %Player{
+            player
+            | current_hand: [card1],
+              split_hands: split_hands ++ [[card2]],
+              finished_hands: finished_hands
+          },
+          dealer,
+          deck
+        )
 
-  # @doc """
-  # Play the player's hand
-
-  # ## Examples
-
-  #   iex> deck = %Deck{cards: [:A, :K, :Q, :K]}
-  #   iex> {:ok, player} = Blackjack.Player.start_link(:player, %Player{hand: [:"9", :"3"]})
-  #   iex> {:ok, dealer} = Blackjack.Player.start_link(:dealer, %Dealer{deck: deck})
-  #   iex> Blackjack.Player.play_hand(dealer)
-  #   [[:"9", :"3", :A, :K]]
-  # """
-  # def play(player, dealer) when is_pid(player) and is_pid(dealer) do
-  #   GenServer.call(player, {:play, dealer})
-  # end
-
-  # Server Callbacks
-
-  def init(state) do
-    {:ok, state}
+      :double_down ->
+        {player = %Player{current_hand: hand}, deck} = Deck.deal(player, deck)
+        {%Player{player | current_hand: nil, finished_hands: finished_hands ++ [hand]}, deck}
+    end
   end
 
-  def handle_call(:show_hand, _from, player = %Player{hand: hand}) do
-    {:reply, hand, player}
-  end
-
-  def handle_call({:receive, card}, _from, player = %Player{hand: hand}) do
-    player = %{player | hand: hand ++ [card]}
-    {:reply, player, player}
-  end
-
-  # def handle_call(:hit, _from, player = %Player{hand: hand}) do
-  #   card = Blackjack.Deck.draw_card(deck)
-  #   hand = hand ++ [card]
-  #   {:reply, hand, %{player | hand: hand}}
-  # end
-
-  # def handle_call({:play, dealer}, _from, player = %Player{deck: deck, strategy: strategy, hand: hand}) when is_pid(dealer) do
-  #   {:reply, play_hand(hand, show_hand(dealer) |> hd, strategy), %{player | hand: hand}}
-  # end
-
-  # defp play_hand(hand, dealer, strategy) do
-  #   # case strategy.action(hand, dealer) do
-  #   #   :hit -> play_hand(hand ++ [Blackjack.Deck.draw_card(deck)], dealer_card, deck, strategy)
-  #   #   :stand -> hand
-  #   #   :double_down -> hand ++ [Blackjack.Deck.draw_card(deck)]
-  #   #   :split -> [hand, hand]
-  #   # end
-  # end
+  defp splits([]), do: nil
+  defp splits([next_hand | splits]), do: {next_hand, splits}
 end

@@ -77,15 +77,17 @@ defmodule Blackjack do
     18
     iex> Blackjack.hand_points([:A, :K, :Q, :K, :K, :K])
     51
+    iex> Blackjack.hand_points([:"9", :"2"])
+    11
   """
-  def hand_points(hand) when is_list (hand) do
+  def hand_points(hand) when is_list(hand) do
     {aces, others} = hand
     |> Enum.map(&points/1)
     |> Enum.split_with(fn x -> length(x) > 1 end)
 
     points = Enum.sum(others |> Enum.map(fn [x] -> x end)) + length(aces)
 
-    if points < 12 do
+    if Enum.count(aces) > 0 and points < 12 do
       points + 10
     else
       points
