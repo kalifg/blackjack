@@ -1,8 +1,23 @@
 defmodule Blackjack.Deck do
-  defstruct cards: []
+  defstruct num_decks: 1, cards: []
 
   alias Blackjack.Deck
   alias Blackjack.Player
+
+  @doc """
+  Generate n shuffled decks of cards
+  """
+  def new(num \\ 1) when is_integer(num) and num > 0 do
+    %Deck{
+      num_decks: num,
+      cards:
+        1..(4 * num)
+        |> Enum.flat_map(fn _ ->
+          [:A, :"2", :"3", :"4", :"5", :"6", :"7", :"8", :"9", :"10", :J, :Q, :K]
+        end)
+        |> Enum.shuffle()
+    }
+  end
 
   @doc """
   Return the number of cards left in the deck

@@ -3,6 +3,11 @@ defmodule Blackjack.DefaultStrategy do
 
   @impl true
   def action(hand, dealer_card \\ nil)
+
+  def action([_card], _dealer_card) do
+    :hit
+  end
+
   def action([:A, :A], _dealer_card) do
     :split
   end

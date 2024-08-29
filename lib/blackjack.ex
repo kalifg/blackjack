@@ -1,5 +1,7 @@
 defmodule Blackjack do
-  # alias Blackjack.Player
+  alias Blackjack.Dealer
+  alias Blackjack.Deck
+  alias Blackjack.Player
 
   @moduledoc """
   Documentation for `Blackjack`.
@@ -8,26 +10,35 @@ defmodule Blackjack do
   # Any hand greater than this value is a bust
   @bust_limit 21
 
-  # def main(_args) do
-  #   {:ok, deck} = Blackjack.Deck.start_link(Blackjack.deck)
+  def main([decks, rounds]) do
+    IO.puts "Playing #{rounds} rounds of blackjack"
 
-  #   hands = Blackjack.Deck.deal(deck, 3)
+    deck = Deck.new(String.to_integer(decks))
+    dealer = Dealer.new()
 
-  #   {player_hands, [dealer_hand]} = hands |> Enum.split(-1)
+    player = Player.new(100)
+    players = [player]
 
-  #   _player_pids = player_hands
-  #     |> Enum.zip(1..Enum.count(player_hands))
-  #     |> Enum.map(fn {hand, num} ->
-  #       Blackjack.Player.start_link(
-  #         ("player_" <> Integer.to_string(num)) |> String.to_atom,
-  #         %Player{deck: deck, strategy: Blackjack.DefaultStrategy, hand: hand}
-  #       )
-  #     end)
-  #     |> Enum.map(fn {:ok, pid} -> pid end)
+    {_players, _dealer, _deck} = Enum.reduce(1..String.to_integer(rounds), {players, dealer, deck}, &play_round/2)
+  end
 
-  #   _dealer_pid = Blackjack.Player.start_link(:dealer, %Player{deck: deck, strategy: Blackjack.DealerStrategy, hand: dealer_hand})
+  defp play_round(_round, {players, dealer, deck}) do
+    {players, dealer, deck} = Dealer.play_round(players, dealer, deck)
 
-  # end
+    IO.inspect players, label: "Players"
+    IO.inspect dealer, label: "Dealer"
+    IO.inspect deck, label: "Deck"
+
+    {players, dealer} = Dealer.clear_hands(players, dealer)
+
+    deck = if Deck.count(deck) < 20 do
+      Deck.new(deck.num_decks)
+    else
+      deck
+    end
+
+    {players, dealer, deck}
+end
 
   @doc """
   Get the point values for a card
@@ -79,6 +90,10 @@ defmodule Blackjack do
     51
     iex> Blackjack.hand_points([:"9", :"2"])
     11
+    iex> Blackjack.hand_points([:A, :"2", :Q])
+    13
+    iex> Blackjack.hand_points([:A, :"2", :Q, :K])
+    23
   """
   def hand_points(hand) when is_list(hand) do
     {aces, others} = hand
@@ -92,15 +107,6 @@ defmodule Blackjack do
     else
       points
     end
-  end
-
-  @doc """
-  Generate n shuffled decks of cards
-  """
-  def deck(num \\ 1) when is_integer(num) and num > 0 do
-    1..(4 * num)
-    |> Enum.flat_map(fn _ -> [:A, :"2", :"3", :"4", :"5", :"6", :"7", :"8", :"9", :"10", :J, :Q, :K] end)
-    |> Enum.shuffle
   end
 
   @doc """
@@ -131,5 +137,39 @@ defmodule Blackjack do
   """
   def blackjack?(hand) when is_list(hand) do
     length(hand) == 2 and hand_points(hand) == 21
+  end
+
+  @doc """
+  Determine the winnings for a player
+
+  ## Examples
+
+    iex> Blackjack.player_winnings([:"6", :"7", :"6"], [:A, :"3", :"4"], 10)
+    10
+    iex> Blackjack.player_winnings([:"6", :"7", :"6", :"9"], [:A, :"3", :"4"], 10)
+    -10
+    iex> Blackjack.player_winnings([:A, :K], [:A, :K], 10)
+    0
+    iex> Blackjack.player_winnings([:"6", :"7", :"4"], [:A, :"6"], 10)
+    0
+    iex> Blackjack.player_winnings([:A, :K], [:A, :"3"], 10)
+    15
+  """
+  def player_winnings(player_hand, dealer_hand, wager) when is_list(player_hand) and is_list(dealer_hand) and is_integer(wager) do
+    cond do
+      blackjack?(dealer_hand) and not blackjack?(player_hand) -> -wager
+      blackjack?(player_hand) and not blackjack?(dealer_hand) -> trunc(wager * 1.5)
+
+      true ->
+        player_points = hand_points(player_hand)
+        dealer_points = hand_points(dealer_hand)
+
+        cond do
+          player_points > @bust_limit -> -wager
+          dealer_points > @bust_limit or player_points > dealer_points -> wager
+          player_points == dealer_points -> 0
+          true -> -wager
+        end
+    end
   end
 end
