@@ -29,8 +29,14 @@ defmodule Blackjack do
     # IO.inspect dealer, label: "Dealer"
     # IO.inspect deck, label: "Deck"
     IO.inspect {
-      Enum.map(players, fn (player) -> {player.wins, player.losses, player.pushes, player.funds} end),
-      Deck.count(deck)
+      Enum.map(players, fn (player) -> [
+        hands: player.finished_hands,
+        wins: player.wins,
+        losses: player.losses,
+        pushes: player.pushes,
+        funds: player.funds
+      ] end),
+      dealer.finished_hands,
     }, label: "Round #{round}"
 
     {players, dealer} = Dealer.clear_hands(players, dealer)
