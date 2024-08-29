@@ -17,7 +17,7 @@ defmodule Blackjack.DefaultStrategy do
 
     cond do
       points == 11 -> :double_down
-      points < 15 -> :hit
+      points < 17 -> :hit
       true -> :stand
     end
   end

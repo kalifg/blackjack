@@ -22,12 +22,16 @@ defmodule Blackjack do
     {_players, _dealer, _deck} = Enum.reduce(1..String.to_integer(rounds), {players, dealer, deck}, &play_round/2)
   end
 
-  defp play_round(_round, {players, dealer, deck}) do
+  defp play_round(round, {players, dealer, deck}) do
     {players, dealer, deck} = Dealer.play_round(players, dealer, deck)
 
-    IO.inspect players, label: "Players"
-    IO.inspect dealer, label: "Dealer"
-    IO.inspect deck, label: "Deck"
+    # IO.inspect players, label: "Players"
+    # IO.inspect dealer, label: "Dealer"
+    # IO.inspect deck, label: "Deck"
+    IO.inspect {
+      Enum.map(players, fn (player) -> {player.wins, player.losses, player.pushes, player.funds} end),
+      Deck.count(deck)
+    }, label: "Round #{round}"
 
     {players, dealer} = Dealer.clear_hands(players, dealer)
 
