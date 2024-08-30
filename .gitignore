@@ -26,4 +26,4 @@ blackjack-*.tar
 /tmp/
 
 # Compiled binary
-blackjack
+/blackjack
