@@ -125,7 +125,7 @@ end
 
   ## Examples
 
-    iex> Blackjack.bust?([:A, :K, :Q])
+    iex> Blackjack.bust?(~H"AKQ")
     false
     iex> Blackjack.bust?([:A, :K, :Q, :K])
     true
