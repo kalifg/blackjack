@@ -68,6 +68,7 @@ end
   def points(card) when is_atom(card) do
     case card do
       :A -> [1, 11]
+      :T -> [10]
       :K -> [10]
       :Q -> [10]
       :J -> [10]

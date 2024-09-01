@@ -18,10 +18,10 @@ defmodule Blackjack.Dealer do
 
   ## Examples
 
-    iex> deck = %Deck{cards: [:A, :"3", :"5", :J, :Q, :K, :"2", :"4", :"6", :"10"]}
+    iex> deck = %Deck{cards: [:A, :"3", :"5", :J, :Q, :K, :"2", :"4", :"6", :T]}
     iex> player = Player.new(100)
     iex> dealer = Dealer.new()
-    iex> {[%Player{current_hand: [:A, :"5"]}], %Player{current_hand: [:"3", :J]}, %Deck{cards: [:Q, :K, :"2", :"4", :"6", :"10"]}} = Dealer.deal_hands([player], dealer, deck)
+    iex> {[%Player{current_hand: [:A, :"5"]}], %Player{current_hand: [:"3", :J]}, %Deck{cards: [:Q, :K, :"2", :"4", :"6", :T]}} = Dealer.deal_hands([player], dealer, deck)
   """
   def deal_hands(players, dealer = %Player{}, deck = %Deck{}) when is_list(players) do
     1..2 |> Enum.reduce({players, dealer, deck}, fn _, {players, dealer, deck} ->
@@ -45,27 +45,27 @@ defmodule Blackjack.Dealer do
 
   ## Examples
 
-      iex> deck = %Deck{cards: [:A, :"3", :"5", :J, :Q, :K, :"2", :"4", :"6", :"10"]}
+      iex> deck = %Deck{cards: [:A, :"3", :"6", :J, :Q, :K, :"2", :"4", :"6", :T]}
       iex> player = Player.new(100)
       iex> dealer = Dealer.new()
-      iex> {[%Player{finished_hands: [[:A, :"5"]], wins: 1, funds: 110}], %Player{finished_hands: [[:"3", :J, :Q]]}, %Deck{cards: [:K, :"2", :"4", :"6", :"10"]}} = Dealer.play_round([player], dealer, deck)
+      iex> {[%Player{finished_hands: [[:A, :"6"]], wins: 1, funds: 110}], %Player{finished_hands: [[:"3", :J, :Q]]}, %Deck{cards: [:K, :"2", :"4", :"6", :T]}} = Dealer.play_round([player], dealer, deck)
 
-      iex> deck = %Deck{cards: [:A, :"3", :"2", :J, :Q, :K, :"2", :"4", :"6", :"10"]}
+      iex> deck = %Deck{cards: [:A, :"3", :"2", :J, :Q, :K, :"2", :"4", :"6", :T]}
       iex> player = Player.new(100)
       iex> dealer = Dealer.new()
-      iex> {[%Player{finished_hands: [[:A, :"2", :Q, :K]], losses: 1, funds: 90}], %Player{finished_hands: [[:"3", :J]]}, %Deck{cards: [:"2", :"4", :"6", :"10"]}} = Dealer.play_round([player], dealer, deck)
+      iex> {[%Player{finished_hands: [[:A, :"2", :Q, :K]], losses: 1, funds: 90}], %Player{finished_hands: [[:"3", :J]]}, %Deck{cards: [:"2", :"4", :"6", :T]}} = Dealer.play_round([player], dealer, deck)
 
-      iex> deck = %Deck{cards: [:"2", :"3", :Q, :J, :Q, :K, :"2", :"4", :"6", :"10"]}
+      iex> deck = %Deck{cards: [:"2", :"3", :Q, :J, :Q, :K, :"2", :"4", :"6", :T]}
       iex> player = Player.new(100)
       iex> dealer = Dealer.new()
-      iex> {[%Player{finished_hands: [[:"2", :Q, :Q]], losses: 1, funds: 90}], %Player{finished_hands: [[:"3", :J]]}, %Deck{cards: [:K, :"2", :"4", :"6", :"10"]}} = Dealer.play_round([player], dealer, deck)
+      iex> {[%Player{finished_hands: [[:"2", :Q, :Q]], losses: 1, funds: 90}], %Player{finished_hands: [[:"3", :J]]}, %Deck{cards: [:K, :"2", :"4", :"6", :T]}} = Dealer.play_round([player], dealer, deck)
 
-      iex> deck = %Deck{cards: [:A, :"3", :Q, :J, :Q, :K, :"2", :"4", :"6", :"10"]}
+      iex> deck = %Deck{cards: [:A, :"3", :Q, :J, :Q, :K, :"2", :"4", :"6", :T]}
       iex> player = Player.new(100)
       iex> dealer = Dealer.new()
-      iex> {[%Player{finished_hands: [[:A, :Q]], wins: 1, funds: 115}], %Player{finished_hands: [[:"3", :J]]}, %Deck{cards: [:Q, :K, :"2", :"4", :"6", :"10"]}} = Dealer.play_round([player], dealer, deck)
+      iex> {[%Player{finished_hands: [[:A, :Q]], wins: 1, funds: 115}], %Player{finished_hands: [[:"3", :J]]}, %Deck{cards: [:Q, :K, :"2", :"4", :"6", :T]}} = Dealer.play_round([player], dealer, deck)
 
-      iex> deck = %Deck{cards: [:A, :"3", :Q, :J, :Q, :K, :"2", :"4", :"6", :"10", :"5", :"7", :"9"]}
+      iex> deck = %Deck{cards: [:A, :"3", :Q, :J, :Q, :K, :"2", :"4", :"6", :T, :"5", :"7", :"9"]}
       iex> player_1 = Player.new(100)
       iex> player_2 = Player.new(100)
       iex> player_3 = Player.new(100)
@@ -75,7 +75,7 @@ defmodule Blackjack.Dealer do
       ...>  [
       ...>     %Player{finished_hands: [[:A, :Q]], wins: 1, funds: 115},
       ...>     %Player{finished_hands: [[:"3", :K, :"6"]], pushes: 1, funds: 100},
-      ...>     %Player{finished_hands: [[:Q, :"2", :"10"]], losses: 1, funds: 90}
+      ...>     %Player{finished_hands: [[:Q, :"2", :T]], losses: 1, funds: 90}
       ...>  ],
       ...>  %Player{finished_hands: [[:J, :"4", :"5"]]},
       ...>  %Deck{cards: [:"7", :"9"]}} = Dealer.play_round([player_1, player_2, player_3], dealer, deck)
