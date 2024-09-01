@@ -16,7 +16,7 @@ defmodule Blackjack do
     deck = Deck.new(String.to_integer(decks))
     dealer = Dealer.new()
 
-    player = Player.new(100, Module.concat([String.to_atom(strategy)]))
+    player = Player.new(100, Module.concat([String.to_atom(strategy)]), 10)
     players = [player]
 
     {_players, _dealer, _deck} = Enum.reduce(1..String.to_integer(rounds), {players, dealer, deck}, &play_round/2)
@@ -35,6 +35,9 @@ defmodule Blackjack do
         wins: player.wins,
         losses: player.losses,
         pushes: player.pushes,
+        win_percentage: (((player.wins / round) * 100) |> Float.round(2) |> Float.to_string()) <> "%",
+        wager: player.wager,
+        result: player.round_result,
         funds: player.funds
      ] end),
     }, label: "Round #{round}"
@@ -160,30 +163,40 @@ defmodule Blackjack do
   ## Examples
 
     iex> Blackjack.player_winnings([:"6", :"7", :"6"], [:A, :"3", :"4"], 10)
-    10
+    {:win, 10}
+
+    iex> Blackjack.player_winnings([:"6", :"7"], [:A, :"3", :"4"], 10)
+    {:loss, -10}
+
     iex> Blackjack.player_winnings([:"6", :"7", :"6", :"9"], [:A, :"3", :"4"], 10)
-    -10
+    {:bust, -10}
+
     iex> Blackjack.player_winnings([:A, :K], [:A, :K], 10)
-    0
+    {:push, 0}
+
     iex> Blackjack.player_winnings([:"6", :"7", :"4"], [:A, :"6"], 10)
-    0
+    {:push, 0}
+
     iex> Blackjack.player_winnings([:A, :K], [:A, :"3"], 10)
-    15
+    {:blackjack, 15}
+
+    iex> Blackjack.player_winnings(~H"A3", ~H"AK", 10)
+    {:dealer_blackjack, -10}
   """
   def player_winnings(player_hand, dealer_hand, wager) when is_list(player_hand) and is_list(dealer_hand) and is_integer(wager) do
     cond do
-      blackjack?(dealer_hand) and not blackjack?(player_hand) -> -wager
-      blackjack?(player_hand) and not blackjack?(dealer_hand) -> trunc(wager * 1.5)
+      blackjack?(dealer_hand) and not blackjack?(player_hand) -> {:dealer_blackjack, -wager}
+      blackjack?(player_hand) and not blackjack?(dealer_hand) -> {:blackjack, trunc(wager * 1.5)}
 
       true ->
         player_points = hand_points(player_hand)
         dealer_points = hand_points(dealer_hand)
 
         cond do
-          player_points > @bust_limit -> -wager
-          dealer_points > @bust_limit or player_points > dealer_points -> wager
-          player_points == dealer_points -> 0
-          true -> -wager
+          player_points > @bust_limit -> {:bust, -wager}
+          dealer_points > @bust_limit or player_points > dealer_points -> {:win, wager}
+          player_points == dealer_points -> {:push, 0}
+          true -> {:loss, -wager}
         end
     end
   end
