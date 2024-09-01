@@ -20,8 +20,8 @@ defmodule Blackjack.Player do
     iex> Player.new(100)
     %Player{current_hand: [], finished_hands: [], funds: 100, losses: 0, split_hands: [], strategy: Blackjack.DefaultStrategy, wins: 0}
   """
-  def new(funds \\ 0) when is_integer(funds) do
-    %Player{funds: funds}
+  def new(funds \\ 0, strategy \\ DefaultStrategy) when is_integer(funds) do
+    %Player{funds: funds, strategy: strategy}
   end
 
   @doc """

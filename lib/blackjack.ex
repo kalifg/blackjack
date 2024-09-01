@@ -10,13 +10,13 @@ defmodule Blackjack do
   # Any hand greater than this value is a bust
   @bust_limit 21
 
-  def main([decks, rounds]) do
+  def main([decks, rounds, strategy]) do
     IO.puts "Playing #{rounds} rounds of blackjack"
 
     deck = Deck.new(String.to_integer(decks))
     dealer = Dealer.new()
 
-    player = Player.new(100)
+    player = Player.new(100, Module.concat([String.to_atom(strategy)]))
     players = [player]
 
     {_players, _dealer, _deck} = Enum.reduce(1..String.to_integer(rounds), {players, dealer, deck}, &play_round/2)
@@ -28,15 +28,15 @@ defmodule Blackjack do
     # IO.inspect players, label: "Players"
     # IO.inspect dealer, label: "Dealer"
     # IO.inspect deck, label: "Deck"
-    IO.inspect {
-      Enum.map(players, fn (player) -> [
-        hands: player.finished_hands,
+    IO.inspect %{
+      Dealer: dealer.finished_hands |> Enum.map(&display_hand/1),
+      Players: Enum.map(players, fn (player) -> [
+        hands: player.finished_hands |> Enum.map(&display_hand/1),
         wins: player.wins,
         losses: player.losses,
         pushes: player.pushes,
         funds: player.funds
-      ] end),
-      dealer.finished_hands,
+     ] end),
     }, label: "Round #{round}"
 
     {players, dealer} = Dealer.clear_hands(players, dealer)
@@ -48,7 +48,11 @@ defmodule Blackjack do
     end
 
     {players, dealer, deck}
-end
+  end
+
+  defp display_hand(hand) do
+    (hand |> Enum.join("")) <> " (" <> Integer.to_string(hand_points(hand)) <> ")"
+  end
 
   @doc """
   Get the point values for a card
