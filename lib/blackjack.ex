@@ -10,16 +10,25 @@ defmodule Blackjack do
   # Any hand greater than this value is a bust
   @bust_limit 21
 
-  def main([decks, rounds, strategy]) do
+  def main([decks, rounds, strategy, funds, wager]) do
     IO.puts "Playing #{rounds} rounds of blackjack"
 
     deck = Deck.new(String.to_integer(decks))
     dealer = Dealer.new()
 
-    player = Player.new(100, Module.concat([String.to_atom(strategy)]), 10)
+    player = Player.new(String.to_integer(funds), Module.concat([String.to_atom(strategy)]), String.to_integer(wager))
     players = [player]
 
-    {_players, _dealer, _deck} = Enum.reduce(1..String.to_integer(rounds), {players, dealer, deck}, &play_round/2)
+    {_players, _dealer, _deck} = Enum.reduce(1..String.to_integer(rounds), {players, dealer, deck}, &play_or_exit/2)
+  end
+
+  defp play_or_exit(round, {players, dealer, deck}) do
+    if Enum.all?(players, &Player.broke?/1) do
+      IO.puts "All players are broke"
+      exit(:normal)
+    else
+      play_round(round, {players, dealer, deck})
+    end
   end
 
   defp play_round(round, {players, dealer, deck}) do
@@ -28,6 +37,7 @@ defmodule Blackjack do
     # IO.inspect players, label: "Players"
     # IO.inspect dealer, label: "Dealer"
     # IO.inspect deck, label: "Deck"
+
     IO.inspect %{
       Dealer: dealer.finished_hands |> Enum.map(&display_hand/1),
       Players: Enum.map(players, fn (player) -> [
@@ -35,9 +45,10 @@ defmodule Blackjack do
         wins: player.wins,
         losses: player.losses,
         pushes: player.pushes,
-        win_percentage: (((player.wins / round) * 100) |> Float.round(2) |> Float.to_string()) <> "%",
+        win_percentage: (((player.wins / (player.wins + player.losses + player.pushes)) * 100) |> Float.round(2) |> Float.to_string()) <> "%",
         wager: player.wager,
         result: player.round_result,
+        maximum_funds: player.maximum_funds,
         funds: player.funds
      ] end),
     }, label: "Round #{round}"

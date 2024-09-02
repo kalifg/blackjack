@@ -45,6 +45,16 @@ defmodule Blackjack.Dealer do
 
   ## Examples
 
+      iex> deck = %Deck{cards: [:"9", :"3", :"2", :J, :Q, :K, :"2", :"4", :"6", :T]}
+      iex> player = Player.new(100)
+      iex> dealer = Dealer.new()
+      iex> {[%Player{finished_hands: [[:"9", :"2", :Q]], wins: 1, funds: 120}], %Player{finished_hands: [[:"3", :J, :K]]}, %Deck{cards: [:"2", :"4", :"6", :T]}} = Dealer.play_round([player], dealer, deck)
+
+      iex> deck = %Deck{cards: [:"9", :"3", :"2", :J, :"4", :"6", :"2", :"4", :"6", :T]}
+      iex> player = Player.new(100)
+      iex> dealer = Dealer.new()
+      iex> {[%Player{finished_hands: [[:"9", :"2", :"4"]], losses: 1, funds: 80}], %Player{finished_hands: [[:"3", :J, :"6"]]}, %Deck{cards: [:"2", :"4", :"6", :T]}} = Dealer.play_round([player], dealer, deck)
+
       iex> deck = %Deck{cards: [:A, :"3", :"6", :J, :Q, :K, :"2", :"4", :"6", :T]}
       iex> player = Player.new(100)
       iex> dealer = Dealer.new()
@@ -84,7 +94,12 @@ defmodule Blackjack.Dealer do
     {players, dealer, deck} = deal_hands(players, dealer, deck)
 
     {players, dealer, deck} = players |> Enum.reduce({[], dealer, deck}, fn player, {players, dealer, deck} ->
-      {player, deck} = Player.play_hand(player, dealer, deck)
+      {player, deck} = if not Player.broke?(player) do
+        Player.play_hand(player, dealer, deck)
+      else
+        {player, deck}
+      end
+
       {players ++ [player], dealer, deck}
     end)
 
@@ -96,8 +111,8 @@ defmodule Blackjack.Dealer do
 
     {players, dealer} = players |> Enum.reduce({[], dealer}, fn player = %Player{finished_hands: finished_hands}, {players, dealer} ->
       {player, dealer} = finished_hands |> Enum.reduce({player, dealer}, fn hand, {player, dealer} ->
-        winnings = Blackjack.player_winnings(hand, dealer.finished_hands |> hd, 10)
-        player = %Player{player | funds: player.funds + winnings}
+        {result, winnings} = Blackjack.player_winnings(hand, dealer.finished_hands |> hd, player.wager)
+        player = %Player{player | funds: player.funds + winnings, maximum_funds: max(player.maximum_funds, player.funds + winnings), round_result: result}
 
         player = cond do
           winnings > 0 -> %Player{player | wins: player.wins + 1}
@@ -118,13 +133,13 @@ defmodule Blackjack.Dealer do
 
   ## Examples
 
-      iex> players = [%Player{current_hand: [:A, :K], split_hands: [[:A, :"6"]], finished_hands: [[:A, :K]]}, %Player{current_hand: [:A, :K], split_hands: [[:A, :"6"]], finished_hands: [[:A, :K]]}]
+      iex> players = [%Player{current_hand: [:A, :K], split_hands: [[:A, :"6"]], finished_hands: [[:A, :K]], funds: 20, default_wager: 10, wager: 20}, %Player{current_hand: [:A, :K], split_hands: [[:A, :"6"]], finished_hands: [[:A, :K]], funds: 5, default_wager: 10, wager: 10}]
       iex> dealer = %Player{current_hand: [:A, :K], finished_hands: [[:A, :K]]}
-      iex> {[%Player{current_hand: [], split_hands: [], finished_hands: []}, %Player{current_hand: [], split_hands: [], finished_hands: []}], %Player{current_hand: [], finished_hands: []}} = Dealer.clear_hands(players, dealer)
+      iex> {[%Player{current_hand: [], split_hands: [], finished_hands: [], wager: 10}, %Player{current_hand: [], split_hands: [], finished_hands: [], wager: 5}], %Player{current_hand: [], finished_hands: []}} = Dealer.clear_hands(players, dealer)
   """
   def clear_hands(players, dealer = %Player{}) when is_list(players) do
     players = players |> Enum.map(fn player ->
-      %Player{player | current_hand: [], split_hands: [], finished_hands: []}
+      %Player{player | current_hand: [], split_hands: [], finished_hands: [], wager: min(player.funds, player.default_wager), round_result: nil}
     end)
 
     dealer = %Player{dealer | current_hand: [], finished_hands: []}

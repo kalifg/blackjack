@@ -1,4 +1,6 @@
 defmodule Blackjack.DealerStrategy do
+  alias Blackjack.Player
+
   @behaviour Blackjack.PlayerStrategy
 
   # The house hits on any hand less than or equal to this value
@@ -9,18 +11,22 @@ defmodule Blackjack.DealerStrategy do
 
   ## Examples
 
-    iex> Blackjack.DealerStrategy.action([:"3", :"9"])
+    iex> Blackjack.DealerStrategy.action(%Player{current_hand: ~H"93"})
     :hit
-    iex> Blackjack.DealerStrategy.action([:A, :K])
+
+    iex> Blackjack.DealerStrategy.action(%Player{current_hand: ~H"AK"})
     :stand
-    iex> Blackjack.DealerStrategy.action([:"9", :K])
+
+    iex> Blackjack.DealerStrategy.action(%Player{current_hand: ~H"9K"})
     :stand
-    iex> Blackjack.DealerStrategy.action([:A, :"6"])
+
+    iex> Blackjack.DealerStrategy.action(%Player{current_hand: ~H"A6"})
     :stand
-    iex> Blackjack.DealerStrategy.action([:A, :"3"])
+
+    iex> Blackjack.DealerStrategy.action(%Player{current_hand: ~H"A3"})
     :hit
   """
-  def action(hand, _dealer_card \\ nil) do
+  def action(%Player{current_hand: hand}, _dealer_card \\ nil) do
     if Blackjack.hand_points(hand) <= @house_limit do
       :hit
     else

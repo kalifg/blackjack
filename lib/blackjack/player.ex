@@ -10,7 +10,11 @@ defmodule Blackjack.Player do
             wins: 0,
             losses: 0,
             pushes: 0,
-            funds: nil
+            funds: nil,
+            maximum_funds: 0,
+            default_wager: 10,
+            wager: nil,
+            round_result: nil
 
   @doc """
   Create a new player with a given stake
@@ -18,10 +22,10 @@ defmodule Blackjack.Player do
   ## Examples
 
     iex> Player.new(100)
-    %Player{current_hand: [], finished_hands: [], funds: 100, losses: 0, split_hands: [], strategy: Blackjack.DefaultStrategy, wins: 0}
+    %Player{current_hand: [], finished_hands: [], funds: 100, losses: 0, split_hands: [], strategy: Blackjack.DefaultStrategy, wins: 0, default_wager: 10, wager: 10}
   """
-  def new(funds \\ 0, strategy \\ DefaultStrategy) when is_integer(funds) do
-    %Player{funds: funds, strategy: strategy}
+  def new(funds \\ 0, strategy \\ DefaultStrategy, wager \\ 10) when is_integer(funds) and is_atom(strategy) and is_integer(wager) do
+    %Player{funds: funds, maximum_funds: funds, strategy: strategy, default_wager: wager, wager: wager}
   end
 
   @doc """
@@ -55,9 +59,9 @@ defmodule Blackjack.Player do
 
     iex> deck = %Deck{cards: [:A, :Q, :K, :"8"]}
     iex> dealer = %Player{current_hand: [:A, :"3"], strategy: Blackjack.DealerStrategy}
-    iex> player = %Player{current_hand: [:"9", :"2"]}
-    iex> Player.play_hand(player, dealer, deck)
-    {%Player{current_hand: nil, finished_hands: [[:"9", :"2", :A]]}, %Deck{cards: [:Q, :K, :"8"]}}
+    iex> player = %Player{Player.new() | current_hand: [:"9", :"2"]}
+    iex> {%Player{current_hand: nil, finished_hands: [[:"9", :"2", :A]], wager: 20}, %Deck{cards: [:Q, :K, :"8"]}} = Player.play_hand(player, dealer, deck)
+
   """
   def play_hand(
         player = %Player{
@@ -69,7 +73,7 @@ defmodule Blackjack.Player do
         dealer = %Player{current_hand: [dealer_card | _other_cards]},
         deck
       ) do
-    case strategy.action(current_hand, dealer_card) do
+    case strategy.action(player, dealer_card) do
       :hit ->
         {player, deck} = Deck.deal(player, deck)
         play_hand(player, dealer, deck)
@@ -112,7 +116,7 @@ defmodule Blackjack.Player do
 
       :double_down ->
         {player = %Player{current_hand: hand}, deck} = Deck.deal(player, deck)
-        {%Player{player | current_hand: nil, finished_hands: finished_hands ++ [hand]}, deck}
+        {%Player{player | current_hand: nil, finished_hands: finished_hands ++ [hand], wager: 2 * player.wager}, deck}
     end
   end
 
@@ -158,5 +162,9 @@ defmodule Blackjack.Player do
   """
   def still_going?(%Player{finished_hands: hands}) do
     not (Enum.all?(hands, fn hand -> Blackjack.bust?(hand) or Blackjack.blackjack?(hand) end))
+  end
+
+  def broke?(%Player{funds: funds}) do
+    funds <= 0
   end
 end
