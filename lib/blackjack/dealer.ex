@@ -114,6 +114,10 @@ defmodule Blackjack.Dealer do
         {result, winnings} = Blackjack.player_winnings(hand, dealer.finished_hands |> hd, player.wager)
         player = %Player{player | funds: player.funds + winnings, maximum_funds: max(player.maximum_funds, player.funds + winnings), round_result: result}
 
+        if player.funds < 0 do
+          Blackjack.display_round_status(0, dealer, players, deck)
+        end
+
         player = cond do
           winnings > 0 -> %Player{player | wins: player.wins + 1}
           winnings < 0 -> %Player{player | losses: player.losses + 1}
