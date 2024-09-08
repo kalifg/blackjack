@@ -1,13 +1,13 @@
-defmodule Blackjack.HandSigil do
+defmodule Blackjack.Sigils.Hand do
 @doc """
 Custom sigil for Blackjack hands.
 
 To use the custom sigil, you need to import the module:
 
-  import HandSigil
+  import Blackjack.Sigils.Hand
 
   ## Examples
-  iex> import HandSigil
+  iex> import Blackjack.Sigils.Hand
   iex> ~H"A3"
   [:A, :"3"]
   iex> ~H"AT"

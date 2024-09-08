@@ -17,7 +17,7 @@ defmodule Blackjack.DefaultStrategy do
     points = Blackjack.hand_points(hand)
 
     cond do
-      points == 11 and funds >= 2 * wager-> :double_down
+      points == 11 and funds >= 2 * wager-> :double
       points < 17 -> :hit
       true -> :stand
     end

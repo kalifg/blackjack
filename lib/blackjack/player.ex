@@ -114,7 +114,7 @@ defmodule Blackjack.Player do
           deck
         )
 
-      :double_down ->
+      :double ->
         {player = %Player{current_hand: hand}, deck} = Deck.deal(player, deck)
         {%Player{player | current_hand: nil, finished_hands: finished_hands ++ [hand], wager: 2 * player.wager}, deck}
     end

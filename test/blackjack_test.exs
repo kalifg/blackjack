@@ -1,6 +1,6 @@
 defmodule BlackjackTest do
-  alias Blackjack.HandSigil
+  alias Blackjack.Sigils.Hand
   use ExUnit.Case
-  import HandSigil
+  import Hand
   doctest Blackjack
 end
