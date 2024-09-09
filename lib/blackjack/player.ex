@@ -1,6 +1,7 @@
 defmodule Blackjack.Player do
   alias Blackjack.Deck
   alias Blackjack.DefaultStrategy
+  alias Blackjack.Hand
   alias Blackjack.Player
 
   defstruct strategy: DefaultStrategy,
@@ -61,7 +62,6 @@ defmodule Blackjack.Player do
     iex> dealer = %Player{current_hand: [:A, :"3"], strategy: Blackjack.DealerStrategy}
     iex> player = %Player{Player.new() | current_hand: [:"9", :"2"]}
     iex> {%Player{current_hand: nil, finished_hands: [[:"9", :"2", :A]], wager: 20}, %Deck{cards: [:Q, :K, :"8"]}} = Player.play_hand(player, dealer, deck)
-
   """
   def play_hand(
         player = %Player{
@@ -161,10 +161,58 @@ defmodule Blackjack.Player do
     false
   """
   def still_going?(%Player{finished_hands: hands}) do
-    not (Enum.all?(hands, fn hand -> Blackjack.bust?(hand) or Blackjack.blackjack?(hand) end))
+    not (Enum.all?(hands, fn hand -> Hand.bust?(hand) or Hand.blackjack?(hand) end))
   end
 
   def broke?(%Player{funds: funds}) do
     funds <= 0
+  end
+
+  @doc """
+  Determine the winnings for a player
+
+  ## Examples
+
+    iex> Player.winnings([:"6", :"7", :"6"], [:A, :"3", :"4"], 10)
+    {:win, 10}
+
+    iex> Player.winnings([:"6", :"7"], [:A, :"3", :"4"], 10)
+    {:loss, -10}
+
+    iex> Player.winnings([:"6", :"7", :"6", :"9"], [:A, :"3", :"4"], 10)
+    {:bust, -10}
+
+    iex> Player.winnings([:A, :K], [:A, :K], 10)
+    {:push, 0}
+
+    iex> Player.winnings([:"6", :"7", :"4"], [:A, :"6"], 10)
+    {:push, 0}
+
+    iex> Player.winnings([:A, :K], [:A, :"3"], 10)
+    {:blackjack, 15}
+
+    iex> Player.winnings(~H"A3", ~H"AK", 10)
+    {:dealer_blackjack, -10}
+  """
+  def winnings(player_hand, dealer_hand, wager)
+    when is_list(player_hand) and is_list(dealer_hand) and is_integer(wager) do
+    cond do
+      Hand.blackjack?(dealer_hand) and not Hand.blackjack?(player_hand) ->
+        {:dealer_blackjack, -wager}
+
+      Hand.blackjack?(player_hand) and not Hand.blackjack?(dealer_hand) ->
+        {:blackjack, trunc(wager * 1.5)}
+
+      true ->
+        player_points = Hand.points(player_hand)
+        dealer_points = Hand.points(dealer_hand)
+
+        cond do
+          player_points > 21 -> {:bust, -wager}
+          dealer_points > 21 or player_points > dealer_points -> {:win, wager}
+          player_points == dealer_points -> {:push, 0}
+          true -> {:loss, -wager}
+        end
+    end
   end
 end

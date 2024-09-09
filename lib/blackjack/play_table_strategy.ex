@@ -1,5 +1,7 @@
 defmodule Blackjack.PlayTableStrategy do
+  alias Blackjack.Hand
   alias Blackjack.Player
+
   import Blackjack.Sigils.PlayTable
 
   @behaviour Blackjack.PlayerStrategy
@@ -40,7 +42,7 @@ defmodule Blackjack.PlayTableStrategy do
 
   def action(%Player{current_hand: hand}, dealer_card) do
     action_table()
-    |> Map.get(hand |> Blackjack.classify_hand, :stand |> List.duplicate(10))
+    |> Map.get(hand |> Hand.classify, :stand |> List.duplicate(10))
     |> Enum.at(dealer_card |> dealer_card_to_index)
   end
 

@@ -1,5 +1,7 @@
 defmodule Blackjack.TableStrategy do
+  alias Blackjack.Hand
   alias Blackjack.Player
+  
   @behaviour Blackjack.PlayerStrategy
 
   @impl true
@@ -85,7 +87,7 @@ defmodule Blackjack.TableStrategy do
   end
 
   def action(%Player{current_hand: hand, wager: wager, funds: funds}, dealer_card) do
-    points = Blackjack.hand_points(hand)
+    points = Hand.points(hand)
 
     cond do
       points == 9 and dealer_card in [:"3", :"4", :"5", :"6"] and funds >= 2 * wager -> :double

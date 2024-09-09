@@ -111,7 +111,7 @@ defmodule Blackjack.Dealer do
 
     {players, dealer} = players |> Enum.reduce({[], dealer}, fn player = %Player{finished_hands: finished_hands}, {players, dealer} ->
       {player, dealer} = finished_hands |> Enum.reduce({player, dealer}, fn hand, {player, dealer} ->
-        {result, winnings} = Blackjack.player_winnings(hand, dealer.finished_hands |> hd, player.wager)
+        {result, winnings} = Player.winnings(hand, dealer.finished_hands |> hd, player.wager)
         player = %Player{player | funds: player.funds + winnings, maximum_funds: max(player.maximum_funds, player.funds + winnings), round_result: result}
 
         if player.funds < 0 do

@@ -1,4 +1,5 @@
 defmodule Blackjack.DealerStrategy do
+  alias Blackjack.Hand
   alias Blackjack.Player
 
   @behaviour Blackjack.PlayerStrategy
@@ -27,7 +28,7 @@ defmodule Blackjack.DealerStrategy do
     :hit
   """
   def action(%Player{current_hand: hand}, _dealer_card \\ nil) do
-    if Blackjack.hand_points(hand) <= @house_limit do
+    if Hand.points(hand) <= @house_limit do
       :hit
     else
       :stand
